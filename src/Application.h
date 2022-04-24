@@ -61,7 +61,7 @@ private:
     SwPeriodicTimer tick100ms;
 
     // SwTimer timeoutTimer;
-    SwTimer stopwatch;
+    SwTimer timer;
 
     // LOCAL CLASSES
     //  NewPing *sonar;
@@ -72,6 +72,11 @@ private:
     int state = STATE_IDLE;
     bool isEntering = true;
     bool isExiting = false;
+
+    uint32_t durationMs = 0;
+    uint32_t elapsedMs = 0;
+    uint32_t remainingMs = 0;
+    // uint32_t startedMs = 0;
 
     unsigned long timerStart;
     unsigned long timeLastShortPress = 0;
@@ -90,7 +95,7 @@ private:
     unsigned long StateBStartTime;
     unsigned long StateCStartTime;
 
-    unsigned long elapsedTime;
+    // unsigned long elapsedTime;
 
     /* private method */
 
@@ -112,14 +117,17 @@ public:
                 LedBlinker &ledBlinkerAlarm);   
     
     /* main methods */ 
-    void init();          
-    void update();
-    void StateMachine();
     // void setSerial(Stream *streamObject);
     // void sendText(char *someText);
 
+    void init();          
+    void update();
+
+    void StateMachine();
+
     /* other methods */ 
     void initializeLcd();
+
     //void allLedsOn();
     //void allLedsOff();
     //void setGreen();

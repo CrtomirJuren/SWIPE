@@ -17,7 +17,7 @@ Application::Application(Led &ledShortDistance,
                          BuzzerNonBlocking &buzzerNonBlocking,
                          SwPeriodicTimer &tick100ms,
                          LiquidCrystal_PCF8574 *lcd,
-                         SwTimer &stopwatch,
+                         SwTimer &timer,
                          LedBlinker &ledBlinkerAlarm){    
 
     this->ledShortDistance = ledShortDistance;
@@ -29,7 +29,7 @@ Application::Application(Led &ledShortDistance,
     this->buzzerNonBlocking = buzzerNonBlocking;
     this->tick100ms = tick100ms;
     this->lcd = lcd;
-    this->stopwatch = stopwatch;
+    this->timer = timer;
 } 
 
 /* initialization method, default */
@@ -122,9 +122,7 @@ void Application::initializeLcd(){
     //   }
 // }
 
-void updateLeds(){
-    
-}
+
 /* run */ 
 void Application::update(){
     /* update classes here */
@@ -136,7 +134,7 @@ void Application::update(){
     if(distButton.isTransitionToShort()){ledShortDistance.on();}
     if(distButton.isTransitionFromShort()){ledShortDistance.off();}
     if(distButton.isTransitionToLong()){ledLongDistance.on();}
-    if(distButton.isTransitionFromLong()){ledLongDistance.off();}
+    if(distButton.isTransitionFromLong()){ledLongDistance.off();}    
 
     if (tick100ms.isElapsed){
         StateMachine();
@@ -154,7 +152,6 @@ void Application::StateMachine(){
             if (isEntering){
                 isEntering = false;
                 timerStart = millis();
-                // sendText("IDLE: State Enter");
                 Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: State Enter");
                 secCounter = 0;
                 // lcd for this state
@@ -166,7 +163,7 @@ void Application::StateMachine(){
             }
 
             /* running state */
-            
+
             /* transition to CONFIG state */
             if (distButton.isTrigger(TRIG_SHORT_TO_LONG)){
                 isExiting = true;
@@ -177,13 +174,20 @@ void Application::StateMachine(){
             }
 
             /* transition to RUNNING state is with 5 seconds of short distance */
+            /* TRANSITION TO RUN STATE IS POSSIBLE ONLY OF TIME IS SET */
             if (distButton.isPressedShort()){
                 secCounter++;             
                 if (secCounter > 40){
                     isExiting = true;
                     Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: SHORT PRESSED FOR 4s");          
                     // next state
-                    state = STATE_RUN;
+                    if(durationMs != 0 ){
+                        state = STATE_RUN;                        
+                    }
+                    else{
+                        Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: durationMs is NOT SET");   
+                        secCounter = 0;
+                    }
                 }
             }
             else{
@@ -203,15 +207,17 @@ void Application::StateMachine(){
             if (isEntering){
                 isEntering = false;
                 timerStart = millis();
-                // sendText("CONFIG: State Enter");
                 Debug.print(DBG_DEBUG, "app|DEBUG|CONFIG: State Enter");
-                // setGreen();
                 lcd->clear();
                 lcd->setCursor(0, 0);
                 lcd->print("*** CONFIGURE ***");
                 lcd->setCursor(0, 1);
                 lcd->print("*** second line.");
             }
+
+            /* running state */
+            // here durationMs is set
+            durationMs = 10000;
 
             /* STATE TIMEOUT */
             if (timeNowSM - timerStart > StateTimeout){
@@ -239,10 +245,9 @@ void Application::StateMachine(){
             if (isEntering){
                 isEntering = false;
                 timerStart = millis();
-                // sendText("B: State Enter");
                 Debug.print(DBG_DEBUG, "app|DEBUG|RUNNING: State Enter");
                 secCounter = 0;
-                // setYellow();
+
                 lcd->clear();
                 lcd->setCursor(0, 0);
                 lcd->print("*** RUNNING ***");
@@ -250,20 +255,19 @@ void Application::StateMachine(){
                 // lcd->print("*** second line.");
 
                 // start stopwatch
-                stopwatch.start();
+                timer.start();
             }
             
             // TODO: update only every 1 seconds
             /* update stopwatch on LCD */
-            elapsedTime = stopwatch.elapsed();
-            // lcd->clear();
+            elapsedMs = timer.elapsed();
+            remainingMs = durationMs - elapsedMs;
+            lcd->clear();
             lcd->setCursor(0, 1);
-            // lcd->print("          ");
-            // lcd->setCursor(0, 1);
-            lcd->print(elapsedTime);
+            lcd->print(remainingMs);
 
             /* running */
-            if (elapsedTime > 3000){
+            if (elapsedMs >= durationMs){
                 // next state
                 state = STATE_ALARM;
                 isExiting = true;
@@ -281,7 +285,6 @@ void Application::StateMachine(){
                     // next state
                     state = STATE_IDLE;
                 }
-                
             }
             else{
                 secCounter = 0;
@@ -290,8 +293,8 @@ void Application::StateMachine(){
             /* exiting state */
             if (isExiting){
                 // stop stopwatch
-                stopwatch.stop();
-                
+                timer.stop();
+               
                 isExiting = false;
                 isEntering = true;
             }
@@ -310,8 +313,6 @@ void Application::StateMachine(){
                 ledBlinkerAlarm.enable();
 
                 secCounter = 0;
-                // setRed();
-                 // setYellow();
                 lcd->clear();
                 lcd->setCursor(0, 0);
                 lcd->print("*** ALARM ***");
@@ -325,23 +326,15 @@ void Application::StateMachine(){
                 isExiting = true;
             }
 
-            /* transition to IDLE state is with 3 seconds of short distance */
-            /* transition to RUNNING state is with 5 seconds of short distance */
+            /* transition to IDLE state is with 2 seconds of short distance */
             if (distButton.isPressedShort()){
-                // if button is pressed every 100ms increment counter
-                // if(timeNowSM - previousMillis > 1000){
-                // save the last time you blinked the LED 
-                // previousMillis = timeNowSM;   
-                
                 secCounter++;             
-                // Serial.println(PressCounter);  
                 if (secCounter > 20){
                     isExiting = true;
                     Debug.print(DBG_DEBUG, "app|DEBUG|ALARM: SHORT PRESSED FOR 2s");          
                     // next state
                     state = STATE_IDLE;
                 }
-                // }
             }
             else{
                 secCounter = 0;
@@ -361,32 +354,9 @@ void Application::StateMachine(){
             }
             break;
         }
-        /*******************************/
-        // case STATE_END: {
-        //     /* entering state */
-        //     if (isEntering){
-        //         isEntering = false;
-        //         timerStart = millis();
-        //         sendText("END: State Enter");
-        //         // functions on enter
-        //         // allLedsOff();
-        //     }
-            
-        //     /* running */
-        //     isExiting = true;
-            
-        //     /* exiting state */
-        //     if (isExiting){
-        //         isExiting = false;
-        //         isEntering = true;
-        //         // next state
-        //         state = STATE_IDLE;
-        //         sendText("END: State Exit");
-        //     }
-        //     break;
-        // }
         default: {
             Debug.print(DBG_DEBUG, "app|DEBUG|State not defined");
+            break;
         }
     }
 }

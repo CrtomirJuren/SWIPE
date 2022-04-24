@@ -17,15 +17,12 @@ enum class RadioState {Off, PlaysRadio, DoesStreaming, Broken};
  */
 class SwTimer {
 public:
-  enum status_t {
-    STOPPED,
-    RUNNING,
-    PAUSED};
-  
-    enum mode_t{
-        COUNTER,
-        COUNTDOWN
+    enum status_t {
+        STOPPED,
+        RUNNING,
+        PAUSED,
     };
+
 	/** create a Ticker object
 	 *
 	 * @param callback the name of the function to call
@@ -40,10 +37,11 @@ public:
 	 */
     // default
 	SwTimer(){}; 
+	// SwTimer(uint32_t duration_ms); 
 
     // implementation
-	SwTimer(int i); 
-    
+	// SwTimer(SwTimer::mode_t mode); 
+
 	/** destructor
 	 *
 	 */
@@ -54,6 +52,7 @@ public:
 	 *
 	 */
 	void start();
+	void set_duration();
 
 	/**
 	 * @brief pause the timer
@@ -78,21 +77,21 @@ public:
 	 * @return uint32_t eleapsed time in micro or milli seconds
 	 */
 	uint32_t elapsed();
-
 	/**
 	 * @brief get the state of the timer
 	 * 
 	 * @return status_t 
 	 */
-	// status_t state();
+
+	status_t state();
+    // bool isElapsed();
 
 private:
 	uint32_t started;
 	uint32_t value;
-	status_t status;
-
 	uint32_t period_ms;
-    // SwTimer::mode_t mode;
+
+	status_t status;
 };
 
 #endif

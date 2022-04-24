@@ -4,9 +4,6 @@
 #include "Arduino.h"
 #include "SwTimer.h"
 
-SwTimer::SwTimer(int i) {
-}
-
 void SwTimer::start() {
 	value = 0;
 	started = millis();
@@ -14,8 +11,8 @@ void SwTimer::start() {
 }
 
 void SwTimer::pause() {
-	if (status == status_t::RUNNING) {
-		value = value + millis() - started;
+	if (status == status_t::RUNNING){
+        value = value + millis() - started;
 		status = status_t::PAUSED;
 	}
 }
@@ -30,17 +27,19 @@ void SwTimer::resume() {
 void SwTimer::stop() {
 	if (status == status_t::RUNNING) {
 	    value = millis() - started + value;
-	}
-	status = status_t::STOPPED;
+	    status = status_t::STOPPED;
+    }
 }
 
 uint32_t SwTimer::elapsed() {
 	if (status == status_t::RUNNING) {
         return millis() - started + value;
     }
-	return value;
+    else{
+        return value;
+    }
 }
 
-// SwTimer::status_t SwTimer::state() {
-// 	return status;
-// }
+SwTimer::status_t SwTimer::state() {
+	return status;
+}
