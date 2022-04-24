@@ -14,6 +14,11 @@
 class LedBlinker
 {
 private:
+    enum state_t{
+        ENABLED,
+        DISABLED
+    };
+
     /* private attributes */
     Led led; // reference to the object
 
@@ -22,8 +27,11 @@ private:
         
     /* private methods */
     void toggleLed();
+    
+    state_t state;
 
 public:
+
     /* constructor */
     LedBlinker() {}       // defualt, must have
 
@@ -41,6 +49,9 @@ public:
     /* methods */ 
     void update();
     void setBrightness(unsigned int brightness);
+
+    void enable();
+    void disable();
 };
 
 #endif

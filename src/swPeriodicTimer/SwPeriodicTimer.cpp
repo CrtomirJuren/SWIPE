@@ -1,49 +1,38 @@
 /* 
 
  */
-#include "Arduino.h"
+//#include "Arduino.h"
 #include "SwPeriodicTimer.h"
 
 SwPeriodicTimer::SwPeriodicTimer(uint32_t period_ms) {
+    this->period_ms = period_ms;
+    status == status_t::STOPPED;
+}
 
+void SwPeriodicTimer::update() {
+    now = millis(); 
+    isElapsed = false;
+
+    if (status == status_t::RUNNING){
+        if(now - lastUpdate > period_ms){
+            // save the last time    
+            lastUpdate = now;
+            isElapsed = true;   
+        }
+    }
 }
 
 void SwPeriodicTimer::start() {
-	value = 0;
-	started = millis();
-	status = RUNNING;
-}
-
-// void SwPeriodicTimer::pause() {
-// 	if (status == RUNNING) {
-// 		value = value + millis() - started;
-// 		status = PAUSED;
-// 	}
-// }
-
-void SwPeriodicTimer::resume() {
-	if (status == PAUSED) {
-		started = millis();
-		status = RUNNING;
-	}
+	lastUpdate = millis();
+	status = status_t::RUNNING;
 }
 
 void SwPeriodicTimer::stop() {
-	if (status == RUNNING) {
-	    value = millis() - started + value;
+	if (status == status_t::RUNNING) {
+	    status = status_t::STOPPED;
 	}
-	status = STOPPED;
 }
 
-uint32_t SwPeriodicTimer::elapsed() {
-	if (status == RUNNING) {
-	
-    return millis() - started + value;
-	
-    }
-	return value;
-}
-
-status_t SwPeriodicTimer::state() {
+SwPeriodicTimer::status_t SwPeriodicTimer::state() {
 	return status;
 }

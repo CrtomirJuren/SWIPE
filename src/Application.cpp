@@ -5,27 +5,40 @@
  * @version 1.0 4/10/20 
  **************************************/
 #include "Application.h"
+// #include "swPeriodicTimer\SwPeriodicTimer.h"
+// #include "SwTimer\SwTimer.h"
+// #include "SwPeriodicTimer\SwPeriodicTimer.h"
 
 /* class contructor overloads */
 Application::Application(Led &ledShortDistance, 
                          Led &ledLongDistance, 
                          PushButton &button, 
                          DistanceButtonHCSR04 &distButton,
-                         BuzzerNonBlocking &buzzerNonBlocking)
-{                               
+                         BuzzerNonBlocking &buzzerNonBlocking,
+                         SwPeriodicTimer &tick100ms,
+                         LiquidCrystal_PCF8574 *lcd,
+                         SwTimer &stopwatch,
+                         LedBlinker &ledBlinkerAlarm){    
+
     this->ledShortDistance = ledShortDistance;
     this->ledLongDistance = ledLongDistance;
+    this->ledBlinkerAlarm = ledBlinkerAlarm;
+
     this->buttonConfig = button;
     this->distButton = distButton;
     this->buzzerNonBlocking = buzzerNonBlocking;
-    // this->potentiometer = potentiometer;
+    this->tick100ms = tick100ms;
+    this->lcd = lcd;
+    this->stopwatch = stopwatch;
 } 
 
 /* initialization method, default */
 void Application::init(){
+
     // init indicators
     ledShortDistance.init();
     ledLongDistance.init();
+    ledBlinkerAlarm.init();
 
     // init sensors
     buttonConfig.init();
@@ -33,12 +46,51 @@ void Application::init(){
 
     buzzerNonBlocking.init();
 
+    initializeLcd();
+
     /* init statemachine */
     state = STATE_IDLE;
     isEntering = true;
 
     /* after init end, wait for safety*/
-    delay(100);
+    // delay(100);
+
+    // start periodic timers
+    tick100ms.start();
+}
+
+/* returns true if error */
+void Application::initializeLcd(){
+    // lcd variables
+    // int show = -1;
+    int error;// lcd variables
+
+    /* check if LCD connected */
+    // See http://playground.arduino.cc/Main/I2cScanner how to test for a I2C device.
+    Wire.begin();
+    Wire.beginTransmission(0x27);
+    error = Wire.endTransmission();
+    Serial.print("Error: ");
+    Serial.print(error);
+
+    if (error == 0) {
+        Serial.println(": LCD found.");
+        // show = 0;
+        lcd->begin(16, 2); // initialize the lcd
+        // turn on backlight
+        lcd->setBacklight(255);
+        // go to first character
+        lcd->home();
+        // clear display
+        lcd->clear();
+        // print to display
+        lcd->print("   SWIPE v1.00   ");
+    } 
+    else {
+        Serial.println(": LCD not found.");
+    } // if
+
+    // return error;
 }
 
 // void Application::setSerial(Stream *streamObject){
@@ -70,37 +122,29 @@ void Application::init(){
     //   }
 // }
 
+void updateLeds(){
+    
+}
 /* run */ 
 void Application::update(){
-    timeNowSM = millis();
-    
-    // unsigned long timeLastShortPress = 0;
-    // unsigned long timeLastLongPress = 0;
-
     /* update classes here */
-    // updateLedsBrightness();
-    distButton.update();
+    distButton.update();         // executes every 100ms
+    buzzerNonBlocking.update();  // executes every 100ms
+    tick100ms.update();          // executes every 100ms
+    ledBlinkerAlarm.update();
 
-    buzzerNonBlocking.update();
+    if(distButton.isTransitionToShort()){ledShortDistance.on();}
+    if(distButton.isTransitionFromShort()){ledShortDistance.off();}
+    if(distButton.isTransitionToLong()){ledLongDistance.on();}
+    if(distButton.isTransitionFromLong()){ledLongDistance.off();}
 
-    // if(distButton.isPressedShort()){
-    // if(distButton.isTrigger(TRIG_SHORT_PRESS)){
-    if((distButton.isTrigger(TRIG_SHORT_PRESS))||(distButton.isTrigger(TRIG_LONG_TO_SHORT))){
-        ledShortDistance.on();
+    if (tick100ms.isElapsed){
+        StateMachine();
     }
-    if((distButton.isTrigger(TRIG_SHORT_RELEASE))||(distButton.isTrigger(TRIG_SHORT_TO_LONG))){
-        ledShortDistance.off();
-    }
-    // else if(distButton.isPressedLong()){
-    if((distButton.isTrigger(TRIG_LONG_PRESS))||(distButton.isTrigger(TRIG_SHORT_TO_LONG))){
-    // if(distButton.isTrigger(TRIG_LONG_PRESS)){
-        ledLongDistance.on();
-    }
-    // else if(distButton.isPressedLong()){
-    if((distButton.isTrigger(TRIG_LONG_RELEASE))||(distButton.isTrigger(TRIG_LONG_TO_SHORT))){
-    // if(distButton.isTrigger(TRIG_LONG_RELEASE)){
-        ledLongDistance.off();
-    }
+}
+
+void Application::StateMachine(){
+    timeNowSM = millis();
 
     /* statemachine */
     switch(state){
@@ -113,10 +157,15 @@ void Application::update(){
                 // sendText("IDLE: State Enter");
                 Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: State Enter");
                 secCounter = 0;
+                // lcd for this state
+                lcd->clear();
+                lcd->setCursor(0, 0);
+                lcd->print("*** IDLE ***");
+                lcd->setCursor(0, 1);
+                lcd->print("*** second line.");
             }
 
             /* running state */
-
             
             /* transition to CONFIG state */
             if (distButton.isTrigger(TRIG_SHORT_TO_LONG)){
@@ -129,17 +178,12 @@ void Application::update(){
 
             /* transition to RUNNING state is with 5 seconds of short distance */
             if (distButton.isPressedShort()){
-                if(timeNowSM - previousMillis > 100){
-                    // save the last time 
-                    previousMillis = timeNowSM;   
-                    
-                    secCounter++;             
-                    if (secCounter > 40){
-                        isExiting = true;
-                        Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: SHORT PRESSED FOR 4s");          
-                        // next state
-                        state = STATE_RUN;
-                    }
+                secCounter++;             
+                if (secCounter > 40){
+                    isExiting = true;
+                    Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: SHORT PRESSED FOR 4s");          
+                    // next state
+                    state = STATE_RUN;
                 }
             }
             else{
@@ -162,6 +206,11 @@ void Application::update(){
                 // sendText("CONFIG: State Enter");
                 Debug.print(DBG_DEBUG, "app|DEBUG|CONFIG: State Enter");
                 // setGreen();
+                lcd->clear();
+                lcd->setCursor(0, 0);
+                lcd->print("*** CONFIGURE ***");
+                lcd->setCursor(0, 1);
+                lcd->print("*** second line.");
             }
 
             /* STATE TIMEOUT */
@@ -194,10 +243,27 @@ void Application::update(){
                 Debug.print(DBG_DEBUG, "app|DEBUG|RUNNING: State Enter");
                 secCounter = 0;
                 // setYellow();
+                lcd->clear();
+                lcd->setCursor(0, 0);
+                lcd->print("*** RUNNING ***");
+                // lcd->setCursor(0, 1);
+                // lcd->print("*** second line.");
+
+                // start stopwatch
+                stopwatch.start();
             }
             
+            // TODO: update only every 1 seconds
+            /* update stopwatch on LCD */
+            elapsedTime = stopwatch.elapsed();
+            // lcd->clear();
+            lcd->setCursor(0, 1);
+            // lcd->print("          ");
+            // lcd->setCursor(0, 1);
+            lcd->print(elapsedTime);
+
             /* running */
-            if (timeNowSM - timerStart > StateDuration){
+            if (elapsedTime > 3000){
                 // next state
                 state = STATE_ALARM;
                 isExiting = true;
@@ -207,19 +273,15 @@ void Application::update(){
             /* transition to RUNNING state is with 5 seconds of short distance */
             if (distButton.isPressedShort()){
                 // if button is pressed every 100ms increment counter
-                if(timeNowSM - previousMillis > 100){
-                    // save the last time you blinked the LED 
-                    previousMillis = timeNowSM;   
-                    
-                    secCounter++;             
-                    // Serial.println(PressCounter);  
-                    if (secCounter > 40){
-                        isExiting = true;
-                        Debug.print(DBG_DEBUG, "app|DEBUG|RUN: SHORT PRESSED FOR 4s");          
-                        // next state
-                        state = STATE_IDLE;
-                    }
+                secCounter++;             
+                // Serial.println(PressCounter);  
+                if (secCounter > 40){
+                    isExiting = true;
+                    Debug.print(DBG_DEBUG, "app|DEBUG|RUN: SHORT PRESSED FOR 4s");          
+                    // next state
+                    state = STATE_IDLE;
                 }
+                
             }
             else{
                 secCounter = 0;
@@ -227,6 +289,9 @@ void Application::update(){
 
             /* exiting state */
             if (isExiting){
+                // stop stopwatch
+                stopwatch.stop();
+                
                 isExiting = false;
                 isEntering = true;
             }
@@ -241,8 +306,17 @@ void Application::update(){
                 Debug.print(DBG_DEBUG, "app|DEBUG|ALARM: State Enter");
                 // turn on buzzer alarm
                 buzzerNonBlocking.enable();
+                // start blinking
+                ledBlinkerAlarm.enable();
+
                 secCounter = 0;
                 // setRed();
+                 // setYellow();
+                lcd->clear();
+                lcd->setCursor(0, 0);
+                lcd->print("*** ALARM ***");
+                lcd->setCursor(0, 1);
+                lcd->print("SHORT 2s STOP");
             }
             
             /* running */
@@ -255,19 +329,19 @@ void Application::update(){
             /* transition to RUNNING state is with 5 seconds of short distance */
             if (distButton.isPressedShort()){
                 // if button is pressed every 100ms increment counter
-                if(timeNowSM - previousMillis > 1000){
-                    // save the last time you blinked the LED 
-                    previousMillis = timeNowSM;   
-                    
-                    secCounter++;             
-                    // Serial.println(PressCounter);  
-                    if (secCounter > 2){
-                        isExiting = true;
-                        Debug.print(DBG_DEBUG, "app|DEBUG|ALARM: SHORT PRESSED FOR 2s");          
-                        // next state
-                        state = STATE_IDLE;
-                    }
+                // if(timeNowSM - previousMillis > 1000){
+                // save the last time you blinked the LED 
+                // previousMillis = timeNowSM;   
+                
+                secCounter++;             
+                // Serial.println(PressCounter);  
+                if (secCounter > 20){
+                    isExiting = true;
+                    Debug.print(DBG_DEBUG, "app|DEBUG|ALARM: SHORT PRESSED FOR 2s");          
+                    // next state
+                    state = STATE_IDLE;
                 }
+                // }
             }
             else{
                 secCounter = 0;
@@ -275,7 +349,11 @@ void Application::update(){
 
             /* exiting state */
             if (isExiting){
+                // stop buzzing
                 buzzerNonBlocking.disable();
+                // stop blinking
+                ledBlinkerAlarm.disable();
+
                 isExiting = false;
                 isEntering = true;
                 // next state
@@ -307,18 +385,11 @@ void Application::update(){
         //     }
         //     break;
         // }
-        /*******************************/
         default: {
             Debug.print(DBG_DEBUG, "app|DEBUG|State not defined");
         }
     }
 }
-
-// void Application::allLedsOff(){
-//     ledGreen.off();
-//     ledYellow.off();
-//     ledRed.off();
-// }
 
 // void Application::allLedsOn(){
 //     ledGreen.on();

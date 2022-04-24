@@ -237,6 +237,23 @@ bool DistanceButtonHCSR04::isAnyTrigger(){
     return (trigger != TRIG_NONE);
 }
 
+bool DistanceButtonHCSR04::isTransitionToShort(){
+    // return (trigger != TRIG_NONE);
+    return (isTrigger(TRIG_SHORT_PRESS) || isTrigger(TRIG_LONG_TO_SHORT));
+}
+
+bool DistanceButtonHCSR04::isTransitionToLong(){
+    return ((isTrigger(TRIG_LONG_PRESS))||(isTrigger(TRIG_SHORT_TO_LONG)));
+}
+
+bool DistanceButtonHCSR04::isTransitionFromLong(){
+    return ((isTrigger(TRIG_LONG_RELEASE))||(isTrigger(TRIG_LONG_TO_SHORT)));
+}
+
+bool DistanceButtonHCSR04::isTransitionFromShort(){
+    return ((isTrigger(TRIG_SHORT_RELEASE))||(isTrigger(TRIG_SHORT_TO_LONG)));
+}
+
 void DistanceButtonHCSR04::sendToArduinoSerialPlotter(){
     // print to serial plotter
     Serial.print(distanceRaw);

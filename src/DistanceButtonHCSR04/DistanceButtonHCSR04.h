@@ -97,6 +97,12 @@ public:
     bool isAnyTrigger();
     bool isTrigger(TriggerType trigger);
 
+    bool isTransitionToShort();
+    bool isTransitionFromShort();
+
+    bool isTransitionToLong();
+    bool isTransitionFromLong();
+
     void sendToArduinoSerialPlotter();
 };
 

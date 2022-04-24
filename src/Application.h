@@ -11,12 +11,18 @@
 #include <Arduino.h>
 #include <Stream.h>
 #include <Arduino_DebugUtils.h>
+#include <LiquidCrystal_PCF8574.h>
+#include <Wire.h>
 
 #include "LedBlinker\Led\Led.h"    // no dependancy
+#include "LedBlinker\LedBlinker.h"    // "LedBlinker\Led\Led.h" 
 #include "PushButton\PushButton.h" // no dependancy
 #include "SerialManager\SerialManager.h" // no dependancy
 #include "DistanceButtonHCSR04\DistanceButtonHCSR04.h"
 #include "BuzzerNonBlocking\BuzzerNonBlocking.h"
+
+#include "SwTimer\SwTimer.h"
+#include "SwPeriodicTimer\SwPeriodicTimer.h"
 
 // #TODO AppSM spremeni v enum class Application.States
 /*
@@ -38,11 +44,29 @@ private:
     Led ledShortDistance;
     Led ledLongDistance;
 
+    LedBlinker ledBlinkerAlarm;
+
     PushButton buttonConfig;
     DistanceButtonHCSR04 distButton; //address of variable v being passed
     BuzzerNonBlocking buzzerNonBlocking;
+    
+    /* sending object to function as pointer reference
+       because we are using pointer to object we must change
+       calling of methods
+       '.' become '->' for pointers to objects instead of objects.
+    */
+    LiquidCrystal_PCF8574 *lcd;
 
-    Stream *_streamRef;
+    // Stream *_streamRef;
+    SwPeriodicTimer tick100ms;
+
+    // SwTimer timeoutTimer;
+    SwTimer stopwatch;
+
+    // LOCAL CLASSES
+    //  NewPing *sonar;
+
+    // CREATING sonar = new NewPing(pinTrig, pinEcho, MAX_DISTANCE);
 
     /* statemachine */ 
     int state = STATE_IDLE;
@@ -66,12 +90,14 @@ private:
     unsigned long StateBStartTime;
     unsigned long StateCStartTime;
 
+    unsigned long elapsedTime;
+
     /* private method */
 
 
 public:
     /* constructor */
-    Application() {}
+    Application() {};
 
     /* constructor overloads */
     // pass objects with reference
@@ -79,16 +105,21 @@ public:
                 Led &ledLongDistance,
                 PushButton &button,
                 DistanceButtonHCSR04 &distButton,
-                BuzzerNonBlocking &buzzerNonBlocking);   
+                BuzzerNonBlocking &buzzerNonBlocking,
+                SwPeriodicTimer &tick100ms,
+                LiquidCrystal_PCF8574 *lcd,
+                SwTimer &stopwatch,
+                LedBlinker &ledBlinkerAlarm);   
     
     /* main methods */ 
     void init();          
     void update();
-
+    void StateMachine();
     // void setSerial(Stream *streamObject);
     // void sendText(char *someText);
 
     /* other methods */ 
+    void initializeLcd();
     //void allLedsOn();
     //void allLedsOff();
     //void setGreen();

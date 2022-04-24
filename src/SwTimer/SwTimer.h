@@ -7,11 +7,6 @@
 /*
 enum class RadioState {Off, PlaysRadio, DoesStreaming, Broken};
 */
-enum class timer_mode_t : unsigned char{
-    COUNTER,
-    COUNTDOWN,
-    PERIODIC,
-};
 
 /** Ticker status
  *
@@ -20,15 +15,17 @@ enum class timer_mode_t : unsigned char{
  * @param PAUSED ticker is paused
  *
  */
-enum status_t {
-	STOPPED,
-	RUNNING,
-	PAUSED};
-
 class SwTimer {
-
 public:
-
+  enum status_t {
+    STOPPED,
+    RUNNING,
+    PAUSED};
+  
+    enum mode_t{
+        COUNTER,
+        COUNTDOWN
+    };
 	/** create a Ticker object
 	 *
 	 * @param callback the name of the function to call
@@ -45,8 +42,7 @@ public:
 	SwTimer(){}; 
 
     // implementation
-	SwTimer(timer_mode_t mode); 
-    SwTimer(timer_mode_t mode, uint32_t period_ms);
+	SwTimer(int i); 
     
 	/** destructor
 	 *
@@ -88,7 +84,7 @@ public:
 	 * 
 	 * @return status_t 
 	 */
-	status_t state();
+	// status_t state();
 
 private:
 	uint32_t started;
@@ -96,7 +92,7 @@ private:
 	status_t status;
 
 	uint32_t period_ms;
-    // timer_mode_t mode;
+    // SwTimer::mode_t mode;
 };
 
 #endif

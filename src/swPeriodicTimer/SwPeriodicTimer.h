@@ -3,32 +3,20 @@
 
 #include <Arduino.h>
 
-// #TODO AppSM spremeni v enum class Application.States
-/*
-enum class RadioState {Off, PlaysRadio, DoesStreaming, Broken};
-*/
-// enum class timer_mode_t : unsigned char{
-//     COUNTER,
-//     COUNTDOWN,
-//     PERIODIC,
-// };
-
 /** Ticker status
  *
  * @param STOPPED default, ticker is stopped
- * @param RUNNIBG ticker is running
- * @param PAUSED ticker is paused
+ * @param RUNNING ticker is running
  *
  */
-enum status_t {
-	STOPPED,
-	RUNNING,
-	PAUSED};
 
 class SwPeriodicTimer {
 
 public:
-
+    enum status_t {
+        RUNNING,
+        STOPPED,
+    };
 	/** create a Ticker object
 	 *
 	 * @param callback the name of the function to call
@@ -42,7 +30,7 @@ public:
 	 *
 	 */
     // default
-	SwPeriodicTimer(){}; 
+  SwPeriodicTimer(){}; 
 
     // implementation
     SwPeriodicTimer(uint32_t period_ms);
@@ -68,33 +56,39 @@ public:
 	 * @brief resume the timer after pause
 	 * 
 	 */
-	void resume();
+	// void resume();
 
 	/** stops the ticker
 	 *
 	 */
 	void stop();
 
+	void update();
+
 	/**
 	 * @brief give the elapsed time back
 	 * 
 	 * @return uint32_t eleapsed time in micro or milli seconds
 	 */
-	uint32_t elapsed();
+	// uint32_t elapsed();
 
 	/**
 	 * @brief get the state of the timer
 	 * 
 	 * @return status_t 
 	 */
-	status_t state();
+	SwPeriodicTimer::status_t state();
+
+	bool isElapsed;
 
 private:
-	uint32_t started;
-	uint32_t value;
+	// uint32_t started;
+	uint32_t lastUpdate;
+	// uint32_t value;
 	status_t status;
-
 	uint32_t period_ms;
+	uint32_t now;
+
     // timer_mode_t mode;
 };
 

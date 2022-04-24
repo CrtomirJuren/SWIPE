@@ -6,7 +6,7 @@
  * @author  Črtomir Juren
  * @version 1.0 4/10/20 
  **************************************/
-# include "LedBlinker.h"
+#include "LedBlinker.h"
 
 /* class contructor */
 LedBlinker::LedBlinker(Led &led){
@@ -14,6 +14,7 @@ LedBlinker::LedBlinker(Led &led){
     lastTimeBlinked = millis();
     // defualt blink delay
     blinkDelay = 500; // [ms]
+    state = state_t::DISABLED;
 }
 
 /* class contructor, overload */
@@ -22,6 +23,7 @@ LedBlinker::LedBlinker(Led &led, unsigned long blinkDelay){
     lastTimeBlinked = millis();
 
     this->blinkDelay = blinkDelay; // [ms]
+    state = state_t::DISABLED;
 }
 
 // /* initialization method */
@@ -42,7 +44,12 @@ void LedBlinker::update(){
 
     if ((timeNow - lastTimeBlinked) >= blinkDelay){
         lastTimeBlinked = timeNow;
-        led.toggle();
+        if(state == state_t::ENABLED){
+            led.toggle();
+        }
+        else{
+           led.off();
+        }
     }
 }
 
@@ -52,4 +59,12 @@ unsigned long LedBlinker::getBlinkDelay(){
 
 void LedBlinker::setBlinkDelay(unsigned long blinkDelay){
     this->blinkDelay = blinkDelay;    
+}
+
+void LedBlinker::enable(){
+    state = state_t::ENABLED;   
+}
+
+void LedBlinker::disable(){
+    state = state_t::DISABLED;      
 }

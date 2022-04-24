@@ -3,9 +3,10 @@
 // #include <Wire.h>
 
 // #include "SwTimer\SwTimer.h"
-#include "SwTimer/SwTimer.h"
+#include "SwTimer.h"
 
-SwTimer swCounter(timer_mode_t::COUNTER);
+SwTimer swCounter(SwTimer::mode_t::COUNTER);
+SwTimer swCountdown(SwTimer::mode_t::COUNTDOWN);
 
 char command;
 

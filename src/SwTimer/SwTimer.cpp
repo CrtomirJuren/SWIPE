@@ -4,50 +4,43 @@
 #include "Arduino.h"
 #include "SwTimer.h"
 
-SwTimer::SwTimer(timer_mode_t mode) {
-
-}
-
-SwTimer::SwTimer(timer_mode_t mode, uint32_t period_ms) {
-
+SwTimer::SwTimer(int i) {
 }
 
 void SwTimer::start() {
 	value = 0;
 	started = millis();
-	status = RUNNING;
+	status = status_t::RUNNING;
 }
 
 void SwTimer::pause() {
-	if (status == RUNNING) {
+	if (status == status_t::RUNNING) {
 		value = value + millis() - started;
-		status = PAUSED;
+		status = status_t::PAUSED;
 	}
 }
 
 void SwTimer::resume() {
-	if (status == PAUSED) {
+	if (status == status_t::PAUSED) {
 		started = millis();
-		status = RUNNING;
+		status = status_t::RUNNING;
 	}
 }
 
 void SwTimer::stop() {
-	if (status == RUNNING) {
+	if (status == status_t::RUNNING) {
 	    value = millis() - started + value;
 	}
-	status = STOPPED;
+	status = status_t::STOPPED;
 }
 
 uint32_t SwTimer::elapsed() {
-	if (status == RUNNING) {
-	
-    return millis() - started + value;
-	
+	if (status == status_t::RUNNING) {
+        return millis() - started + value;
     }
 	return value;
 }
 
-status_t SwTimer::state() {
-	return status;
-}
+// SwTimer::status_t SwTimer::state() {
+// 	return status;
+// }
