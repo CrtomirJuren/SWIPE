@@ -33,13 +33,17 @@ void SwTimer::stop() {
 
 uint32_t SwTimer::elapsed() {
 	if (status == status_t::RUNNING) {
-        return millis() - started + value;
+        return (millis() - started + value);
     }
     else{
         return value;
     }
 }
 
-SwTimer::status_t SwTimer::state() {
-	return status;
+bool SwTimer::isPaused(){
+    return (status == status_t::PAUSED);
+}
+
+bool SwTimer::isRunning(){
+    return (status == status_t::RUNNING);
 }

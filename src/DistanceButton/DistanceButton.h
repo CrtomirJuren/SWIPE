@@ -1,43 +1,19 @@
 /**************************************
- * @file    DistanceButtonHCSR04.h
- * @brief   interface for DistanceButtonHCSR04 class
+ * @file    DistanceButton.h
+ * @brief   interface for class
  * @author  Črtomir Juren
  * @version 1.0 2/11/21
  **************************************/
 
-#ifndef DISTANCEBUTTONHCR04_H
-#define DISTANCEBUTTONHCR04_H
+#ifndef DISTANCEBUTTON_H
+#define DISTANCEBUTTON_H
 
 #include <Arduino.h>
 #include <Arduino_DebugUtils.h>
 #include <HCSR04.h>
 #include <Smoothed.h> 	// running avarage
 
-// statemachine
-enum DistBtnSM{
-    SM_RELEASED,
-    SM_SHORT,
-    SM_LONG,
-};
-
-// triggers
-enum TriggerType{
-    TRIG_NONE,
-    TRIG_SHORT_PRESS,
-    TRIG_SHORT_RELEASE,
-    TRIG_LONG_PRESS,
-    TRIG_LONG_RELEASE,
-    TRIG_SHORT_TO_LONG,
-    TRIG_LONG_TO_SHORT,
-};
-  
-enum Gesture{
-    GESTURE_NONE, 
-    GESTURE_SHORT,
-    GESTURE_LONG,
-};
-
-class DistanceButtonHCSR04{
+class DistanceButton{
 private:
     /* attributes */
     UltraSonicDistanceSensor *distSensor;
@@ -59,17 +35,37 @@ private:
     float hysteresis = 0;
 
     /* statemachine */
-    DistBtnSM stateSM;
-    DistBtnSM stateOldSM;
-    bool isTransition;
+    bool isStateChange;
 
     void gesture_calculations();
     void statemachine();
 
 public:
-    /* public vars*/
-    Gesture gesture = GESTURE_NONE;
-    TriggerType trigger = TRIG_NONE;
+    // statemachine
+    enum class state_t{
+        RELEASED,
+        RELEASED_TO_SHORT,
+        RELEASED_TO_LONG,
+
+        SHORT,
+        SHORT_TO_LONG,
+        SHORT_TO_RELEASED,
+
+        LONG,
+        LONG_TO_SHORT,
+        LONG_TO_RELEASED,
+    };
+
+    enum class gesture_t {
+        NONE,
+        SHORT,
+        LONG,
+    };
+
+    // state and its history
+    state_t state, state_old, state_hist[5];
+
+    gesture_t gest = gesture_t::NONE;
 
     float distanceRaw;
     float distanceAvg;
@@ -78,8 +74,8 @@ public:
     float longLimit;
 
     /* constructor */
-    DistanceButtonHCSR04() {}       // contructor, defualt, must have
-    DistanceButtonHCSR04(byte pinTrig, byte pinEcho);     // contructor, defualt, must have
+    DistanceButton() {}       // contructor, defualt, must have
+    DistanceButton(UltraSonicDistanceSensor *distSensor);     // contructor, defualt, must have
 
     /* public methods */
     void initialize(float shortLimitSetting, 
@@ -90,12 +86,27 @@ public:
     // call this in loop() every 100ms
     void update();
 
+    // new
+    bool isGestureShort();
+    bool isGestureLong();
+    bool isGestureNone();
+
+    bool isShortOnlyPress();
+    bool isLongOnlyPress();
+
+    bool isState(state_t state);
+
+    /*char* const is an immutable pointer 
+    (it cannot point to any other location)
+    but the contents of location at which
+    it points are mutable.
+    */
+    const char* stateToString(state_t state);
+
+    // old
     bool isPressed();
     bool isPressedShort();
     bool isPressedLong();
-
-    bool isAnyTrigger();
-    bool isTrigger(TriggerType trigger);
 
     bool isTransitionToShort();
     bool isTransitionFromShort();

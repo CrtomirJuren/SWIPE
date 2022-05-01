@@ -3,11 +3,6 @@
 
 #include <Arduino.h>
 
-// #TODO AppSM spremeni v enum class Application.States
-/*
-enum class RadioState {Off, PlaysRadio, DoesStreaming, Broken};
-*/
-
 /** Ticker status
  *
  * @param STOPPED default, ticker is stopped
@@ -17,7 +12,7 @@ enum class RadioState {Off, PlaysRadio, DoesStreaming, Broken};
  */
 class SwTimer {
 public:
-    enum status_t {
+    enum class status_t {
         STOPPED,
         RUNNING,
         PAUSED,
@@ -35,17 +30,11 @@ public:
 	/** constructors
 	 *
 	 */
-    // default
 	SwTimer(){}; 
-	// SwTimer(uint32_t duration_ms); 
-
-    // implementation
-	// SwTimer(SwTimer::mode_t mode); 
 
 	/** destructor
 	 *
 	 */
-    // default    
     ~SwTimer(){};
 
 	/** started the ticker
@@ -83,15 +72,16 @@ public:
 	 * @return status_t 
 	 */
 
-	status_t state();
+	bool isPaused();
+	bool isRunning();
+
     // bool isElapsed();
+	status_t status;
 
 private:
 	uint32_t started;
 	uint32_t value;
 	uint32_t period_ms;
-
-	status_t status;
 };
 
 #endif

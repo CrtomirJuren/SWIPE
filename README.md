@@ -1,3 +1,7 @@
+## TODO LIST
+- timer formatting 00:00:00
+- slowly make pretty lcd gui
+
 ## STUDY
 
 - https://community.platformio.org/t/tutorial-for-creating-multi-cpp-file-arduino-project/5830
@@ -9,6 +13,10 @@ set serial
 SPRINTF() teorija
 - https://www.programmingelectronics.com/sprintf-arduino/
 
-
-### Enum vs Enum Class
-ni dobro uporabljati samo enum. ker se lahko zgodi da ima več različnih .h z enum isto ime. npr DISABLED
+### Study
+- using enum classes in private/public object scope
+- using c++ short hand one line if else ternary operator
+variable = (condition) ? expressionTrue : expressionFalse;
+- statemachine with enum classes
+- distance button statemachine with array history
+- distance button with histeresys

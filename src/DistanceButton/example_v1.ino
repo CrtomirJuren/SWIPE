@@ -3,9 +3,9 @@
 #include <HCSR04.h>
 #include <Arduino_DebugUtils.h>
 #include <Smoothed.h> 	// Include the library
-#include "DistanceButtonHCSR04/DistanceButtonHCSR04.h"
+#include "DistanceButton/DistanceButton.h"
 
-DistanceButtonHCSR04 distButton(12, 13); //address of variable v being passed
+DistanceButton distButton(12, 13); //address of variable v being passed
 
 void setup () {
     Serial.begin(9600);  // We initialize serial connection so that we could print values from sensor.

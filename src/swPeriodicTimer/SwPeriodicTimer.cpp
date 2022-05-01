@@ -6,7 +6,7 @@
 
 SwPeriodicTimer::SwPeriodicTimer(uint32_t period_ms) {
     this->period_ms = period_ms;
-    status == status_t::STOPPED;
+    status = status_t::STOPPED;
 }
 
 void SwPeriodicTimer::update() {
