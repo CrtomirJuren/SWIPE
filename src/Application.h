@@ -50,7 +50,7 @@ private:
     SwTimer timer;
 
     /* statemachine */ 
-    enum state_t{
+    enum class state_t{
         IDLE,
         CONFIG,
         RUN,
@@ -58,12 +58,28 @@ private:
         END,
     };
 
-    state_t state;
-    state_t state_old; 
+    struct{
+        uint16_t s = 0;
+        uint16_t m = 0;
+        uint16_t h = 0;
+        char buffer [18];
+    } lcdClock_t;
+
+    // struct{
+    //     int32_t duration_ms = 0;
+    //     int32_t elapsed_ms = 0;
+    //     int32_t remaining_ms = 0;
+    // } stopwatch_t;
+
+    // static char formattedTime [50];
+    // char lcdTimebuffer [18]; // a few bytes larger than your LCD line
+
+    state_t state = state_t::IDLE;
+    state_t state_old = state_t::IDLE;
     bool isEntering = true;
 
     /* stopwatch */
-    int32_t durationMs = 0;
+    int32_t totalDurationSec = 0;
     uint32_t elapsedMs = 0;
     uint32_t remainingMs = 0;
     int8_t direction = 1; // -1 or 1
@@ -81,14 +97,24 @@ private:
     const unsigned long StateDuration = 10000;
     const unsigned long StateTimeout = 15000;
 
-    /* private method */
+    /* private methods */
+    void StateMachine();
 
+    void lcdInintialize();
+
+    void lcdShowTime();
+
+    //void allLedsOn();
+    //void allLedsOff();
+    //void setGreen();
+    //void setYellow();
+    //void setRed();
 
 public:
-    /* constructor */
+    /* constructor default */
     Application() {};
 
-    /* constructor overloads */
+    /* constructor overload */
     // pass objects with reference
     Application(Led &ledShortDistance,
                 Led &ledLongDistance,
@@ -104,19 +130,10 @@ public:
     // void setSerial(Stream *streamObject);
     // void sendText(char *someText);
 
+    /* public methods */
     void init();          
     void update();
 
-    void StateMachine();
-
-    /* other methods */ 
-    void initializeLcd();
-
-    //void allLedsOn();
-    //void allLedsOff();
-    //void setGreen();
-    //void setYellow();
-    //void setRed();
 };
 
 #endif

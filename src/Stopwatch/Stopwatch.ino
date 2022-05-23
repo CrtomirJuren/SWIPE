@@ -1,19 +1,20 @@
 #include <Arduino.h>
 #include <Arduino_DebugUtils.h>
+// #include <Wire.h>
 
-#include "Stopwatch\Stopwatch.h"
+// #include "SwTimer\SwTimer.h"
+#include "Stopwatch.h"
 
-
-Stopwatch stopwatch; // default constructor called
+Stopwatch stopwatch();
 
 char command;
 
 void setup() {
-    Serial.begin(115200);   
+    Serial.begin(9600);   
 
     Debug.setDebugLevel(DBG_DEBUG);
     Debug.timestampOn();
-    Debug.print(DBG_DEBUG, "setup");
+    Debug.print(DBG_DEBUG, "main|DEBUG|serial.begin");
 }
 
 void loop() {
@@ -25,33 +26,33 @@ void loop() {
     Serial.println(command);
 
     Debug.print(DBG_DEBUG, "elapsed");
-    // Serial.println(stopwatch.elapsed());
+    Serial.println(stopwatch.elapsed());
 
     // act upon command
     switch (command)
     {
         case 'a':
-            Debug.print(DBG_DEBUG, "start");
+            Debug.print(DBG_DEBUG, "stopwatch.start()");
             stopwatch.start();
             break;
         
         case 'b':
-            Debug.print(DBG_DEBUG, "pause");
-            // stopwatch.pause();
+            Debug.print(DBG_DEBUG, "stopwatch.pause()");
+            stopwatch.pause();
             break;
         
         case 'c':
-            Debug.print(DBG_DEBUG, "resume");
-            // stopwatch.resume();
+            Debug.print(DBG_DEBUG, "stopwatch.resume()");
+            stopwatch.resume();
             break;
         
         case 'd':
-            Debug.print(DBG_DEBUG, "stop");
-            // stopwatch.stop();
+            Debug.print(DBG_DEBUG, "stopwatch.stop()");
+            stopwatch.stop();
             break;
 
         default:
-            Debug.print(DBG_DEBUG, "unknown");
+            Debug.print(DBG_DEBUG, "unknown command");
             break;
     }
   }

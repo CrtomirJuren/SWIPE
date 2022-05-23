@@ -7,6 +7,8 @@
  **************************************/
 #include "Application.h"
 
+//TODO ALL serial.print to Debug.print()
+
 /* class contructor */
 Application::Application(Led &ledShortDistance, 
                          Led &ledLongDistance, 
@@ -44,11 +46,11 @@ void Application::init(){
 
     buzzerNonBlocking.init();
 
-    initializeLcd();
+    lcdInintialize();
 
-    /* init statemachine */
-    state = Application::IDLE;
-    isEntering = true;
+    // /* init statemachine */
+    // state = Application::state_t::IDLE;
+    // isEntering = true;
 
     /* at application init end, check wait for safety*/
     ledShortDistance.on();
@@ -62,7 +64,7 @@ void Application::init(){
 }
 
 /* returns true if error */
-void Application::initializeLcd(){
+void Application::lcdInintialize(){
     // lcd variables
     // int show = -1;
     int error;// lcd variables
@@ -73,10 +75,11 @@ void Application::initializeLcd(){
     Wire.beginTransmission(0x27);
     error = Wire.endTransmission();
     Serial.print("Error: ");
+    // Debug.print("Error: ");
     Serial.print(error);
 
     if (error == 0) {
-        Serial.println(": LCD found.");
+        // Serial.println(": LCD found.");
         // show = 0;
         lcd->begin(16, 2); // initialize the lcd
         // turn on backlight
@@ -144,6 +147,36 @@ void Application::update(){
     }
 }
 
+void  Application::lcdShowTime(){
+
+    // time conversion
+    // declare variables
+    // int time = 0;
+ 
+    // // obtain data from user
+    // time_seconds = 9630
+ 
+    // // using the time from ^ above, convert
+    // // secs to HH:MM:SS format using division
+    // // and modulus
+    // lcdClock_t.h = time / 3600;
+    // time = time % 3600; 
+    // lcdClock_t.m = time / 60;
+    // time = time % 60;
+    // lcdClock_t.s = time;
+
+    // format into string
+    sprintf (lcdClock_t.buffer,
+            "%02u:%02u:%02u",
+            lcdClock_t.h, 
+            lcdClock_t.m,
+            lcdClock_t.s);
+
+    // show time on line second and offset 4 columns
+    lcd->setCursor(4, 1);
+    lcd->print(lcdClock_t.buffer);
+}
+
 void Application::StateMachine(){
     timeNowSM = millis();
 
@@ -151,78 +184,67 @@ void Application::StateMachine(){
     switch(state){
 
         /* STATE IDLE */
-        case Application::IDLE :{
+        case Application::state_t::IDLE :{
             /* enter */
             if (isEntering){
                 isEntering = false;
-                timerStart = millis();
+                // timerStart = millis();
                 Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: State Enter");
-                secCounter = 0;
+                // secCounter = 0;
                 // lcd for this state
                 lcd->clear();
                 lcd->setCursor(0, 0);
                 lcd->print("*** IDLE ***");
                 
-                // SHOW ON LCD NEW TIME
-                lcd->setCursor(0, 1);
-                // lcd->print("*** second line.");
-                lcd->print(durationMs);
+                lcdShowTime();
             }
 
             /* run */
 
-            /* transition to CONFIG state */
-            // if (distButton.isTrigger(TRIG_SHORT_TO_LONG)){
+            /* transition to CONFIG */
             if (distButton.isState(DistanceButton::state_t::SHORT_TO_LONG)){
                 Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: TRIG_SHORT_TO_LONG");
                 // next state                
-                state = Application::CONFIG;
+                state = Application::state_t::CONFIG;
             }
 
-            /* transition to RUNNING state is with 5 seconds of short distance */
+            /* transition to RUNNING */
             if (distButton.isShortOnlyPress()){
-                if(durationMs != 0 ){                    
-                    state = Application::RUN;             
+                if(totalDurationSec != 0 ){                    
+                    state = Application::state_t::RUN;             
                 }
                 else{
-                    Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: durationMs is NOT SET");   
-                    // secCounter = 0;
+                    Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: totalDurationSec is NOT SET");   
                 }
             }
 
             /* exit */
             if (state_old != state){
-                // isEntering = true;
-                /* state cleanup */
-            
+                /* state cleanup */           
             }
             break;
         }
 
         /* STATE CONFIG */
-        case Application::CONFIG :{
+        case Application::state_t::CONFIG :{
             /* enter */
             if (isEntering){
                 isEntering = false;
                 // timerStart = millis();
                 Debug.print(DBG_DEBUG, "app|DEBUG|CONFIG: State Enter");
-                lcd->clear();
+                // lcd->clear();
                 lcd->setCursor(0, 0);
                 lcd->print("*** CONFIGURE ***");
-                // lcd->setCursor(0, 1);
-                // lcd->print("*** second line.");
             }
 
             /* run */     
             /* transition back to IDLE state */
-            // if (distButton.isTrigger(TRIG_LONG_TO_SHORT)){
             if(distButton.isState(DistanceButton::state_t::LONG_TO_SHORT)){
                 Debug.print(DBG_DEBUG, "app|DEBUG|CONFIG: Exiting CONFIG state");          
-                state = Application::IDLE;
+                state = Application::state_t::IDLE;
             }
 
             // DIRECTION OF INCREMENT
-            // if(distButton.isTrigger(TRIG_SHORT_TO_LONG)){
             if((distButton.isState(DistanceButton::state_t::SHORT_TO_LONG))){
                 Debug.print(DBG_DEBUG, "app|DEBUG|CONFIG: direction increment change");
                 direction *= -1;
@@ -232,12 +254,12 @@ void Application::StateMachine(){
             // IF TRIIGER NONE -> SHORT PRESS RELEASE DETECTED
             // INCREMENT SECONDS
             if(distButton.isShortOnlyPress()){ 
-            // if(distButton.isTrigger(TRIG_SHORT_RELEASE)){
-            // if(distButton.isTrigger(TRIG_SHORT_RELEASE)){
                 Debug.print(DBG_DEBUG, "app|DEBUG|CONFIG: seconds increment");
-                durationMs = durationMs + direction * 1000;
-                if (durationMs < 0){
-                    durationMs = 0;
+
+                totalDurationSec = totalDurationSec + direction;
+
+                if (totalDurationSec < 0){
+                    totalDurationSec = 0;
                 }     
             }
 
@@ -245,36 +267,27 @@ void Application::StateMachine(){
             if(distButton.isLongOnlyPress()){ 
             // if(distButton.isTrigger(TRIG_LONG_RELEASE)){
                 Debug.print(DBG_DEBUG, "app|DEBUG|CONFIG: minutes increment");
-                durationMs = durationMs + direction * 60000;
-                if (durationMs < 0){
-                    durationMs = 0;
+                
+                totalDurationSec = totalDurationSec + direction * 60;
+                
+                if (totalDurationSec < 0){
+                    totalDurationSec = 0;
                 }   
             }
 
-            //MULTIPLE INCREMENTS
-            // IF SHORT IS ON FOR MORE THAN 3 SECONDS, START FAST INCREMENT
+            // FAST INCREMENT SECONDS
 
-
-            // IF LONG IS ON FOR MORE THAN 3 SECONDS, START FAST INCREMENT
-
+            //FAST INCREMENT MINUTES
 
             // SHOW ON LCD NEW TIME
-            lcd->clear();
+            // lcd->clear();
             lcd->setCursor(0, 0);
             lcd->print("*** CONFIGURE ***");
             lcd->setCursor(0, 1);
-            lcd->print(durationMs);
-
-            //state timeout disabled
-            /* STATE TIMEOUT */ 
-            // if (timeNowSM - timerStart > StateTimeout){
-                // isExiting = true;
-                // Debug.print(DBG_DEBUG, "app|DEBUG|CONFIG: Timeout exit");
-            // }
+            lcd->print(totalDurationSec);
 
             /* exit */
             if (state_old != state){
-                // isEntering = true;
                 /* state cleanup */
             
             }
@@ -282,7 +295,7 @@ void Application::StateMachine(){
         }
 
         /* STATE RUN */
-        case Application::RUN :{
+        case Application::state_t::RUN :{
             /* enter */
             if (isEntering){
                 isEntering = false;
@@ -290,30 +303,30 @@ void Application::StateMachine(){
                 Debug.print(DBG_DEBUG, "app|DEBUG|RUNNING: State Enter");
                 secCounter = 0;
 
-                lcd->clear();
+                // lcd->clear();
                 lcd->setCursor(0, 0);
                 lcd->print("*** RUNNING ***");
                 // lcd->setCursor(0, 1);
                 // lcd->print("*** second line.");
 
                 // start stopwatch
-                timer.start();
+                // timer.start();
             }
             
             /* run */
             // TODO: update only every 1 seconds
             /* update stopwatch on LCD */
-            elapsedMs = timer.elapsed();
-            remainingMs = durationMs - elapsedMs;
+            // elapsedMs = timer.elapsed();
+            // remainingMs = totalDurationSec - elapsedMs;
 
             // print remaining time to lcd
-            lcd->clear();
+            // lcd->clear();
             lcd->setCursor(0, 1);
             lcd->print(remainingMs);
 
-            if (elapsedMs >= (uint32_t) durationMs){
+            if (elapsedMs >= (uint32_t) totalDurationSec){
                 // next state
-                state = Application::ALARM;
+                state = Application::state_t::ALARM;
             }
 
             /* timer control */ 
@@ -333,7 +346,7 @@ void Application::StateMachine(){
                 // Debug.print(DBG_DEBUG, "app|DEBUG|RUN: SHORT PRESSED - STOPPING");  
                 timer.stop();        
                 // next state
-                state = Application::IDLE;
+                state = Application::state_t::IDLE;
             }
 
             /* exit */
@@ -344,7 +357,7 @@ void Application::StateMachine(){
         }
 
         /* STATE ALARM */
-        case Application::ALARM :{
+        case Application::state_t::ALARM :{
             /* enter */
             if (isEntering){
                 isEntering = false;
@@ -356,7 +369,7 @@ void Application::StateMachine(){
                 ledBlinkerAlarm.enable();
 
                 secCounter = 0;
-                lcd->clear();
+                // lcd->clear();
                 lcd->setCursor(0, 0);
                 lcd->print("*** ALARM ***");
                 lcd->setCursor(0, 1);
@@ -374,17 +387,15 @@ void Application::StateMachine(){
             if(distButton.isShortOnlyPress()){
                 Debug.print(DBG_DEBUG, "app|DEBUG|ALARM: SHORT PRESSED FOR 2s");          
                 // next state
-                state = Application::IDLE;
+                state = Application::state_t::IDLE;
             }
 
             /* exit */
             if (state_old != state){
-                // isEntering = true;
-
                 /* state cleanup */
-                // stop buzzing
+
+                // stop buzzing and blinking
                 buzzerNonBlocking.disable();
-                // stop blinking
                 ledBlinkerAlarm.disable();
             }
             break;
@@ -401,16 +412,6 @@ void Application::StateMachine(){
     }
     state_old = state;
 }
-
-/* helper functions  */
-// const char* DistanceButton::stateToString(state_t s){
-
-//     static char buf [50] = "";
-
-//     strcpy (buf, "00:00:00");
-
-//     return buf;
-// }
 
 // void Application::allLedsOn(){
 //     ledGreen.on();
@@ -442,11 +443,11 @@ void Application::StateMachine(){
 //     if (secCounter > 40){
 //         Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: SHORT PRESSED FOR 4s");          
 //         // next state
-//         if(durationMs != 0 ){                    
+//         if(totalDurationSec != 0 ){                    
 //             state = Application::RUN;             
 //         }
 //         else{
-//             Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: durationMs is NOT SET");   
+//             Debug.print(DBG_DEBUG, "app|DEBUG|IDLE: totalDurationSec is NOT SET");   
 //             secCounter = 0;
 //         }
 //     }

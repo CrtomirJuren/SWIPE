@@ -1,5 +1,5 @@
-#ifndef SWTIMER_H
-#define SWTIMER_H
+#ifndef STOPWATCH_H
+#define STOPWATCH_H
 
 #include <Arduino.h>
 
@@ -10,13 +10,20 @@
  * @param PAUSED ticker is paused
  *
  */
-class SwTimer {
+class Stopwatch {
 public:
     enum class status_t {
         STOPPED,
         RUNNING,
         PAUSED,
     };
+    
+    struct{
+        uint16_t s = 0;
+        uint16_t m = 0;
+        uint16_t h = 0;
+        // char buffer [18];
+    } time_t;
 
 	/** create a Ticker object
 	 *
@@ -30,12 +37,13 @@ public:
 	/** constructors
 	 *
 	 */
-	SwTimer(){}; 
+	Stopwatch(){}; 
+	// Stopwatch(int i); 
 
 	/** destructor
 	 *
 	 */
-    ~SwTimer(){};
+    ~Stopwatch(){};
 
 	/** started the ticker
 	 *
@@ -54,6 +62,12 @@ public:
 	 * 
 	 */
 	void resume();
+
+	/**
+	 * @brief sets duration
+	 * 
+	 */
+	void setDurationMs(uint32_t duration);
 
 	/** stops the ticker
 	 *

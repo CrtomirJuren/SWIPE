@@ -1,19 +1,24 @@
-/*
-     SWIPE
+/**************************************
      __S__topwatch
      __W__
      __I__th   
      __P__roximity
     s__E__nsor
- */
 
-/* DOWNLOADED LIBRARIES */
+ * @file    main.cpp
+ * @brief   
+ * @author  Črtomir Juren
+ * @date    5/01/22  dd/mm/yy 
+ * @version 1.0
+ **************************************/ 
+
+/* OFFICIAL LIBRARIES */
 #include <Arduino.h>
 #include "LiquidCrystal_PCF8574.h"
 #include <Wire.h>
 #include <Arduino_DebugUtils.h>
 
-/* MY LIBRARIES */
+/* CUSTOM LIBRARIES */
 #include "Application.h"                                 //Application class, it contains all classes
 #include "LedBlinker\Led\Led.h"                           // no dependancy
 #include "LedBlinker\LedBlinker.h"                        // "LedBlinker\Led\Led.h"
@@ -22,7 +27,7 @@
 #include "PushButton\PushButton.h"                         // no dependancy
 #include "DistanceButton\DistanceButton.h"
 
-/* PIN DEFINES */
+/* DEFINES */
 // #define FREE 1
 #define LED_SHORT_DISTANCE_PIN 2
 #define LED_LONG_DISTANCE_PIN 3
@@ -43,10 +48,8 @@ LedBlinker ledBlinkerAlarm(ledAlarm, 200);
 LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 PushButton buttonConfig(BUTTON_CONFIG_PIN, 50, BTN_INT_UP);
 
-// create HCSR ultrasonic distance sonsor
 UltraSonicDistanceSensor ultraSonicDistanceSensor(DIST_SENSOR_TRIG_PIN,
-                                                  DIST_SENSOR_ECHO_PIN);
-                                                  
+                                                  DIST_SENSOR_ECHO_PIN);                                     
 DistanceButton distButton(&ultraSonicDistanceSensor); 
 
 Buzzer buzzer(BUZZER_PIN, 3000);
@@ -55,7 +58,7 @@ BuzzerNonBlocking buzzerNonBlocking(buzzer, 500);
 SwPeriodicTimer tick100ms(100);
 SwTimer timer;
 
-// Application class
+/* Application constructor */ 
 Application application(ledShortDistance, 
                         ledLongDistance, 
                         buttonConfig,
@@ -66,7 +69,6 @@ Application application(ledShortDistance,
                         timer,
                         ledBlinkerAlarm);
 
-/*** SETUP ***/
 void setup() {
     /* initalize serial */
     Serial.begin(115200);
@@ -77,12 +79,11 @@ void setup() {
     Debug.timestampOn();
     Debug.print(DBG_DEBUG, "main|DEBUG|serial.begin");
 
-    /* initailize */
+    /* Application initialization */ 
     application.init();
 }
 
-/*** MAIN LOOP ***/
 void loop(){
-    /* run application */
+    /* Application run */ 
     application.update();
 }
